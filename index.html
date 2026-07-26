@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SeamanOG - Dənizçi İmtahan Platforması</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header" id="header">
+            <div class="container header-inner">
+                <a href="#" class="logo" onclick="navigateTo('home')">
+                    <i class="fas fa-anchor"></i>
+                    <span>Seaman<span class="logo-accent">OG</span></span>
+                </a>
+                <nav class="nav" id="nav">
+                    <a href="#" class="nav-link active" data-page="home" onclick="navigateTo('home')">
+                        <i class="fas fa-home"></i> Ana Səhifə
+                    </a>
+                    <a href="#" class="nav-link" data-page="exam" onclick="navigateTo('exam')">
+                        <i class="fas fa-pen-fancy"></i> İmtahan
+                    </a>
+                    <a href="#" class="nav-link" data-page="material" onclick="navigateTo('material')">
+                        <i class="fas fa-book"></i> Material
+                    </a>
+                    <a href="#" class="nav-link" data-page="admin" onclick="navigateTo('admin')">
+                        <i class="fas fa-cog"></i> Admin
+                    </a>
+                </nav>
+                <div class="search-box" id="searchBox">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="globalSearch" placeholder="Axtarış..." oninput="handleSearch(this.value)">
+                </div>
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Search Results Dropdown -->
+        <div class="search-results-dropdown" id="searchResults" style="display:none"></div>
+
+        <!-- Main Content -->
+        <main class="main" id="mainContent">
+            <!-- Home Page -->
+            <div class="page active" id="page-home">
+                <div class="hero">
+                    <div class="container">
+                        <div class="hero-content">
+                            <div class="hero-badge">⚓ Dənizçi Platforması</div>
+                            <h1 class="hero-title">İmtahan Hazırlıq Platforması</h1>
+                            <p class="hero-subtitle">Dövlət Dəniz və Liman Agentliyinin rəsmi imtahan sualları əsasında hazırlığa başlayın</p>
+                            <div class="hero-stats">
+                                <div class="stat-item">
+                                    <div class="stat-number" id="totalQuestions">0</div>
+                                    <div class="stat-label">Sual</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number" id="totalTopics">0</div>
+                                    <div class="stat-label">Mövzu</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number" id="totalPdfs">0</div>
+                                    <div class="stat-label">PDF</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="container">
+                    <div class="section-title">
+                        <h2>İmtahan Bölmələri</h2>
+                        <p>Kateqoriyanı seçin və imtahana başlayın</p>
+                    </div>
+                    <div class="category-cards">
+                        <div class="category-card" onclick="navigateTo('exam', 'siravi')">
+                            <div class="card-icon" style="background: linear-gradient(135deg, #667eea, #764ba2)">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <h3>Sıravi Heyət Hazırlığı</h3>
+                            <p id="siraviCount">5 mövzu</p>
+                        </div>
+                        <div class="category-card" onclick="navigateTo('exam', 'special')">
+                            <div class="card-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c)">
+                                <i class="fas fa-certificate"></i>
+                            </div>
+                            <h3>Xüsusi Hazırlıq</h3>
+                            <p id="specialCount">38 mövzu</p>
+                        </div>
+                        <div class="category-card" onclick="navigateTo('exam', 'certdip')">
+                            <div class="card-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe)">
+                                <i class="fas fa-graduation-cap"></i>
+                            </div>
+                            <h3>Sertifikat / Diplom</h3>
+                            <p id="certdipCount">31 mövzu</p>
+                        </div>
+                    </div>
+                    <div class="section-title" style="margin-top:3rem">
+                        <h2>Necə işləyir?</h2>
+                    </div>
+                    <div class="steps-grid">
+                        <div class="step-card">
+                            <div class="step-number">1</div>
+                            <h3>Kateqoriya seçin</h3>
+                            <p>Sıravi heyət, xüsusi hazırlıq və ya sertifikat/diplom bölməsindən birini seçin</p>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">2</div>
+                            <h3>Mövzu seçin</h3>
+                            <p>İmtahan vermək istədiyiniz mövzunu seçin</p>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">3</div>
+                            <h3>İmtahan verin</h3>
+                            <p>20 sualdan ibarət imtahanda iştirak edin və nəticənizi öyrənin</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exam Page -->
+            <div class="page" id="page-exam">
+                <div class="container">
+                    <!-- Category Selection -->
+                    <div id="examCategorySelect">
+                        <div class="section-title">
+                            <h2>İmtahan Kateqoriyası</h2>
+                            <p>Bir kateqoriya seçin</p>
+                        </div>
+                        <div class="category-cards">
+                            <div class="category-card" onclick="selectExamCategory('siravi')">
+                                <div class="card-icon" style="background: linear-gradient(135deg, #667eea, #764ba2)">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <h3>Sıravi Heyət Hazırlığı</h3>
+                            </div>
+                            <div class="category-card" onclick="selectExamCategory('special')">
+                                <div class="card-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c)">
+                                    <i class="fas fa-certificate"></i>
+                                </div>
+                                <h3>Xüsusi Hazırlıq</h3>
+                            </div>
+                            <div class="category-card" onclick="selectExamCategory('certdip')">
+                                <div class="card-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe)">
+                                    <i class="fas fa-graduation-cap"></i>
+                                </div>
+                                <h3>Sertifikat / Diplom</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Topic Selection -->
+                    <div id="examTopicSelect" style="display:none">
+                        <div class="breadcrumb">
+                            <a href="#" onclick="navigateTo('exam')">İmtahan</a>
+                            <i class="fas fa-chevron-right"></i>
+                            <span id="examCategoryName"></span>
+                        </div>
+                        <div class="section-title">
+                            <h2 id="examCategoryTitle"></h2>
+                            <p>Mövzu seçin</p>
+                        </div>
+                        <div class="topic-grid" id="topicGrid"></div>
+                    </div>
+
+                    <!-- Exam Active -->
+                    <div id="examActive" style="display:none">
+                        <div class="exam-header">
+                            <div class="exam-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="examProgress"></div>
+                                </div>
+                                <span id="examProgressText">1/20</span>
+                            </div>
+                            <div class="exam-timer" id="examTimer">
+                                <i class="fas fa-clock"></i>
+                                <span id="timerText">00:00</span>
+                            </div>
+                        </div>
+                        <div class="exam-question-card" id="examQuestionCard">
+                            <div class="question-number" id="questionNumber">Sual 1</div>
+                            <div class="question-text" id="questionText"></div>
+                            <div class="options-list" id="optionsList"></div>
+                        </div>
+                        <div class="exam-nav">
+                            <button class="btn btn-outline" id="prevBtn" onclick="prevQuestion()" disabled>
+                                <i class="fas fa-arrow-left"></i> Əvvəlki
+                            </button>
+                            <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()">
+                                Növbəti <i class="fas fa-arrow-right"></i>
+                            </button>
+                            <button class="btn btn-success" id="finishBtn" onclick="finishExam()" style="display:none">
+                                <i class="fas fa-check"></i> Bitir
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Exam Result -->
+                    <div id="examResult" style="display:none">
+                        <div class="result-card">
+                            <div class="result-icon" id="resultIcon"></div>
+                            <h2 id="resultTitle"></h2>
+                            <div class="result-stats">
+                                <div class="result-stat">
+                                    <div class="result-stat-value" id="resultTotal">20</div>
+                                    <div class="result-stat-label">Ümumi sual</div>
+                                </div>
+                                <div class="result-stat correct">
+                                    <div class="result-stat-value" id="resultCorrect">0</div>
+                                    <div class="result-stat-label">Düzgün</div>
+                                </div>
+                                <div class="result-stat wrong">
+                                    <div class="result-stat-value" id="resultWrong">0</div>
+                                    <div class="result-stat-label">Səhv</div>
+                                </div>
+                                <div class="result-stat">
+                                    <div class="result-stat-value" id="resultPercent">0%</div>
+                                    <div class="result-stat-label">Faiz</div>
+                                </div>
+                            </div>
+                            <div class="result-actions">
+                                <button class="btn btn-primary" onclick="retryExam()">
+                                    <i class="fas fa-redo"></i> Yenidən İmtahan
+                                </button>
+                                <button class="btn btn-outline" onclick="navigateTo('home')">
+                                    <i class="fas fa-home"></i> Ana Səhifə
+                                </button>
+                            </div>
+                        </div>
+                        <div class="result-details" id="resultDetails"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Material Page -->
+            <div class="page" id="page-material">
+                <div class="container">
+                    <div id="materialCategorySelect">
+                        <div class="section-title">
+                            <h2>Material Bölməsi</h2>
+                            <p>PDF materiallara baxın və yükləyin</p>
+                        </div>
+                        <div class="category-cards">
+                            <div class="category-card" onclick="selectMaterialCategory('siravi')">
+                                <div class="card-icon" style="background: linear-gradient(135deg, #667eea, #764ba2)">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <h3>Sıravi Heyət Hazırlığı</h3>
+                                <p id="siraviPdfCount">5 PDF</p>
+                            </div>
+                            <div class="category-card" onclick="selectMaterialCategory('special')">
+                                <div class="card-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c)">
+                                    <i class="fas fa-certificate"></i>
+                                </div>
+                                <h3>Xüsusi Hazırlıq</h3>
+                                <p id="specialPdfCount">38 PDF</p>
+                            </div>
+                            <div class="category-card" onclick="selectMaterialCategory('certdip')">
+                                <div class="card-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe)">
+                                    <i class="fas fa-graduation-cap"></i>
+                                </div>
+                                <h3>Sertifikat / Diplom</h3>
+                                <p id="certdipPdfCount">31 PDF</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="materialTopicList" style="display:none">
+                        <div class="breadcrumb">
+                            <a href="#" onclick="navigateTo('material')">Material</a>
+                            <i class="fas fa-chevron-right"></i>
+                            <span id="materialCategoryName"></span>
+                        </div>
+                        <div class="section-title">
+                            <h2 id="materialCategoryTitle"></h2>
+                            <p>PDF materiallar</p>
+                        </div>
+                        <div class="pdf-grid" id="pdfGrid"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Page -->
+            <div class="page" id="page-admin">
+                <div class="container">
+                    <div class="section-title">
+                        <h2>Admin Panel</h2>
+                        <p>Platforma idarəetməsi</p>
+                    </div>
+                    <div class="admin-grid">
+                        <div class="admin-card">
+                            <div class="admin-card-icon"><i class="fas fa-chart-bar"></i></div>
+                            <h3>İmtahan Statistikası</h3>
+                            <div class="admin-stats" id="adminStats">
+                                <p>Yüklənir...</p>
+                            </div>
+                        </div>
+                        <div class="admin-card">
+                            <div class="admin-card-icon"><i class="fas fa-file-pdf"></i></div>
+                            <h3>PDF İdarəetmə</h3>
+                            <div class="admin-actions">
+                                <div class="pdf-category-list" id="adminPdfList">
+                                    <p>Yüklənir...</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="admin-card">
+                            <div class="admin-card-icon"><i class="fas fa-database"></i></div>
+                            <h3>Sual Bazası</h3>
+                            <div class="admin-stats" id="adminQuestionStats">
+                                <p>Yüklənir...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container footer-inner">
+                <p>&copy; 2026 SeamanOG - Dənizçi İmtahan Platforması</p>
+                <p>Məlumat mənbəyi: <a href="https://ddla.gov.az/exams" target="_blank">DDLA.gov.az</a></p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
