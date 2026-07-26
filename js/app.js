@@ -9,7 +9,8 @@ let timerInterval = null;
 let timerSeconds = 0;
 let examStartTime = null;
 
-// Load data
+const LETTERS = ['A', 'B', 'C', 'D', 'E'];
+
 async function loadData() {
     try {
         const response = await fetch('data/questions_data.json');
@@ -22,26 +23,15 @@ async function loadData() {
 
 function updateStats() {
     if (!appData) return;
-    let totalQ = 0, totalT = 0, totalP = 0;
-    const categories = ['siravi', 'special', 'certdip'];
-    const names = { siravi: 'Sıravi Heyət', special: 'Xüsusi Hazırlıq', certdip: 'Sertifikat/Diplom' };
     
-    categories.forEach(cat => {
-        const topics = appData[cat] || [];
-        topics.forEach(t => {
-            totalQ += t.count;
-            totalT++;
-            totalP++;
-        });
+    const catNames = { siravi: 'Sıravi Heyət', special: 'Xüsusi Hazırlıq', certdip: 'Sertifikat/Diplom' };
+    
+    ['siravi', 'special', 'certdip'].forEach(cat => {
+        const count = appData[cat]?.length || 0;
+        const el = document.getElementById(cat + 'Count');
+        if (el) el.textContent = `${count} mövzu`;
     });
     
-    document.getElementById('totalQuestions').textContent = totalQ.toLocaleString();
-    document.getElementById('totalTopics').textContent = totalT;
-    document.getElementById('totalPdfs').textContent = totalP;
-    
-    document.getElementById('siraviCount').textContent = `${appData.siravi?.length || 0} mövzu`;
-    document.getElementById('specialCount').textContent = `${appData.special?.length || 0} mövzu`;
-    document.getElementById('certdipCount').textContent = `${appData.certdip?.length || 0} mövzu`;
     document.getElementById('siraviPdfCount').textContent = `${appData.siravi?.length || 0} PDF`;
     document.getElementById('specialPdfCount').textContent = `${appData.special?.length || 0} PDF`;
     document.getElementById('certdipPdfCount').textContent = `${appData.certdip?.length || 0} PDF`;
@@ -50,7 +40,8 @@ function updateStats() {
 // Navigation
 function navigateTo(page, category) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(`page-${page}`).classList.add('active');
+    const pageEl = document.getElementById(`page-${page}`);
+    if (pageEl) pageEl.classList.add('active');
     
     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
     const navLink = document.querySelector(`.nav-link[data-page="${page}"]`);
@@ -70,8 +61,6 @@ function navigateTo(page, category) {
         if (page === 'exam') selectExamCategory(category);
         if (page === 'material') selectMaterialCategory(category);
     }
-    
-    if (page === 'admin') updateAdminPanel();
     
     window.scrollTo(0, 0);
     closeMobileMenu();
@@ -96,6 +85,8 @@ function handleSearch(query) {
     const q = query.toLowerCase();
     let results = [];
     
+    const catNames = { siravi: 'Sıravi Heyət', special: 'Xüsusi Hazırlıq', certdip: 'Sertifikat/Diplom' };
+    
     ['siravi', 'special', 'certdip'].forEach(cat => {
         (appData[cat] || []).forEach(topic => {
             if (topic.name.toLowerCase().includes(q)) {
@@ -114,18 +105,17 @@ function handleSearch(query) {
         return;
     }
     
-    const catNames = { siravi: 'Sıravi Heyət', special: 'Xüsusi Hazırlıq', certdip: 'Sertifikat/Diplom' };
-    
     let html = '';
     results.slice(0, 15).forEach(r => {
         if (r.type === 'topic') {
             html += `<div class="search-result-item" onclick="navigateTo('exam', '${r.category}')">
                 <div class="sr-title"><i class="fas fa-folder"></i> ${r.topic.name}</div>
-                <div class="sr-meta">${catNames[r.category]} • ${r.topic.count} sual</div>
+                <div class="sr-meta">${catNames[r.category]} • ${r.topic.questions?.length || 0} sual</div>
             </div>`;
         } else {
             const preview = r.question.question.substring(0, 80) + '...';
-            html += `<div class="search-result-item" onclick="startExamWithTopic('${r.category}', ${appData[r.category].indexOf(r.topic)})">
+            const topicIdx = appData[r.category].indexOf(r.topic);
+            html += `<div class="search-result-item" onclick="startExamWithTopic('${r.category}', ${topicIdx})">
                 <div class="sr-title"><i class="fas fa-question-circle"></i> ${preview}</div>
                 <div class="sr-meta">${catNames[r.category]} • ${r.topic.name}</div>
             </div>`;
@@ -136,10 +126,12 @@ function handleSearch(query) {
     dropdown.style.display = 'block';
 }
 
-// Close search on outside click
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('.search-box') && !e.target.closest('.search-results-dropdown')) {
-        document.getElementById('searchResults').style.display = 'none';
+// Close search dropdown on outside click
+document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('searchResults');
+    const searchBox = document.getElementById('searchBox');
+    if (dropdown && !dropdown.contains(e.target) && searchBox && !searchBox.contains(e.target)) {
+        dropdown.style.display = 'none';
     }
 });
 
@@ -153,73 +145,92 @@ function selectExamCategory(category) {
     document.getElementById('examCategoryName').textContent = catNames[category];
     document.getElementById('examCategoryTitle').textContent = catNames[category];
     
+    // Update exam page category counts
+    const count = appData[category]?.length || 0;
+    const countEl = document.getElementById(`exam${category.charAt(0).toUpperCase() + category.slice(1)}Count`);
+    if (countEl) countEl.textContent = `${count} mövzu`;
+    
     const grid = document.getElementById('topicGrid');
     const topics = appData[category] || [];
     
     grid.innerHTML = topics.map((topic, idx) => `
         <div class="topic-card" onclick="startExamWithTopic('${category}', ${idx})">
-            <div class="topic-icon"><i class="fas fa-file-alt"></i></div>
-            <div class="topic-info">
+            <div class="topic-card-icon"><i class="fas fa-file-alt"></i></div>
+            <div style="flex:1;min-width:0">
                 <h4>${topic.name}</h4>
-                <p>${topic.count} sual</p>
+                <span class="topic-count">${topic.questions?.length || 0} sual</span>
             </div>
-            <div class="topic-arrow"><i class="fas fa-chevron-right"></i></div>
         </div>
     `).join('');
 }
 
-function startExamWithTopic(category, topicIndex) {
+function startExamWithTopic(category, topicIdx) {
     currentExamCategory = category;
-    currentExamTopic = appData[category][topicIndex];
+    currentExamTopic = appData[category][topicIdx];
     
     document.getElementById('examCategorySelect').style.display = 'none';
     document.getElementById('examTopicSelect').style.display = 'none';
     document.getElementById('examActive').style.display = 'block';
     document.getElementById('examResult').style.display = 'none';
-    document.getElementById('searchResults').style.display = 'none';
     
-    const allQuestions = currentExamTopic.questions || [];
-    if (allQuestions.length === 0) {
-        alert('Bu mövzuda sual tapılmadı.');
-        navigateTo('exam');
-        return;
-    }
+    // Get all questions for this topic
+    const questions = currentExamTopic.questions || [];
     
-    // Shuffle and pick 20
-    const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
+    // Shuffle and take up to 20
+    const shuffled = [...questions].sort(() => Math.random() - 0.5);
     examQuestions = shuffled.slice(0, Math.min(20, shuffled.length));
     
-    // Shuffle options for each question
-    examQuestions = examQuestions.map(q => {
-        if (q.options && q.options.length > 0) {
-            const correctIdx = q.options.indexOf(q.correctAnswer);
-            const shuffledOpts = [...q.options].sort(() => Math.random() - 0.5);
-            return { ...q, shuffledOptions: shuffledOpts, correctShuffledIdx: shuffledOpts.indexOf(q.correctAnswer) };
-        }
-        // Generate options for simple format (no options provided)
+    // For each question, create shuffled options with correct answer included
+    examQuestions.forEach(q => {
         const correctAnswer = q.correctAnswer;
-        const fakeOptions = generateFakeOptions(correctAnswer, allQuestions);
-        const allOpts = [correctAnswer, ...fakeOptions].sort(() => Math.random() - 0.5);
-        return { ...q, shuffledOptions: allOpts, correctShuffledIdx: allOpts.indexOf(correctAnswer) };
+        const existingOptions = q.options || [];
+        
+        // Collect all available options (correct + fake)
+        let allOptions = [correctAnswer];
+        existingOptions.forEach(opt => {
+            if (opt !== correctAnswer && !allOptions.includes(opt)) {
+                allOptions.push(opt);
+            }
+        });
+        
+        // If we don't have enough options (need 5), add more from other questions
+        while (allOptions.length < 5) {
+            const randomQ = questions[Math.floor(Math.random() * questions.length)];
+            if (randomQ.correctAnswer && !allOptions.includes(randomQ.correctAnswer)) {
+                allOptions.push(randomQ.correctAnswer);
+            }
+            // Fallback: add generic distractors
+            if (allOptions.length < 5 && !allOptions.includes(`Düzgün cavab yoxdur ${allOptions.length}`)) {
+                allOptions.push(`Düzgün cavab yoxdur ${allOptions.length}`);
+            }
+        }
+        
+        // Trim to exactly 5
+        allOptions = allOptions.slice(0, 5);
+        
+        // Shuffle options
+        const shuffledOptions = [...allOptions].sort(() => Math.random() - 0.5);
+        q.shuffledOptions = shuffledOptions;
+        q.correctShuffledIdx = shuffledOptions.indexOf(correctAnswer);
     });
     
-    userAnswers = new Array(examQuestions.length).fill(-1);
     currentQuestionIndex = 0;
+    userAnswers = new Array(examQuestions.length).fill(-1);
     
     // Start timer
     timerSeconds = 0;
-    examStartTime = Date.now();
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(updateTimer, 1000);
+    examStartTime = Date.now();
     
     showQuestion();
 }
 
-function generateFakeOptions(correctAnswer, allQuestions) {
-    const allAnswers = allQuestions.map(q => q.correctAnswer).filter(a => a && a !== correctAnswer);
-    const uniqueAnswers = [...new Set(allAnswers)];
-    const shuffled = uniqueAnswers.sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, Math.min(3, shuffled.length));
+function updateTimer() {
+    timerSeconds++;
+    const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+    const secs = (timerSeconds % 60).toString().padStart(2, '0');
+    document.getElementById('timerDisplay').textContent = `${mins}:${secs}`;
 }
 
 function showQuestion() {
@@ -228,19 +239,28 @@ function showQuestion() {
     
     document.getElementById('questionNumber').textContent = `Sual ${currentQuestionIndex + 1}`;
     document.getElementById('questionText').textContent = q.question;
-    document.getElementById('examProgress').style.width = `${((currentQuestionIndex + 1) / total) * 100}%`;
-    document.getElementById('examProgressText').textContent = `${currentQuestionIndex + 1}/${total}`;
+    document.getElementById('questionCounter').textContent = `${currentQuestionIndex + 1} / ${total}`;
+    document.getElementById('examProgressFill').style.width = `${((currentQuestionIndex + 1) / total) * 100}%`;
     
-    const letters = ['A', 'B', 'C', 'D', 'E'];
-    const options = q.shuffledOptions || [];
+    // Show image if available
+    const imgContainer = document.getElementById('questionImageContainer');
+    if (q.hasImage && q.images && q.images.length > 0) {
+        imgContainer.style.display = 'block';
+        document.getElementById('questionImage').src = q.images[0];
+    } else {
+        imgContainer.style.display = 'none';
+    }
     
-    document.getElementById('optionsList').innerHTML = options.map((opt, idx) => `
+    // Show options
+    const optionsList = document.getElementById('optionsList');
+    optionsList.innerHTML = q.shuffledOptions.map((opt, idx) => `
         <div class="option-item ${userAnswers[currentQuestionIndex] === idx ? 'selected' : ''}" onclick="selectOption(${idx})">
-            <div class="option-letter">${letters[idx]}</div>
-            <div>${opt}</div>
+            <div class="option-letter">${LETTERS[idx]}</div>
+            <div class="option-text">${opt}</div>
         </div>
     `).join('');
     
+    // Update nav buttons
     document.getElementById('prevBtn').disabled = currentQuestionIndex === 0;
     
     if (currentQuestionIndex === total - 1) {
@@ -254,9 +274,18 @@ function showQuestion() {
 
 function selectOption(idx) {
     userAnswers[currentQuestionIndex] = idx;
-    document.querySelectorAll('.option-item').forEach((el, i) => {
-        el.classList.toggle('selected', i === idx);
+    
+    // Update visual
+    document.querySelectorAll('.option-item').forEach((item, i) => {
+        item.classList.toggle('selected', i === idx);
     });
+    
+    // Auto-advance after short delay
+    setTimeout(() => {
+        if (currentQuestionIndex < examQuestions.length - 1) {
+            nextQuestion();
+        }
+    }, 300);
 }
 
 function nextQuestion() {
@@ -273,41 +302,33 @@ function prevQuestion() {
     }
 }
 
-function updateTimer() {
-    timerSeconds = Math.floor((Date.now() - examStartTime) / 1000);
-    const min = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
-    const sec = (timerSeconds % 60).toString().padStart(2, '0');
-    document.getElementById('timerText').textContent = `${min}:${sec}`;
-}
-
 function finishExam() {
-    const unanswered = userAnswers.filter(a => a === -1).length;
-    if (unanswered > 0 && !confirm(`${unanswered} sual cavabsız qalıb. Bitirmək istəyirsiniz?`)) return;
-    
-    clearInterval(timerInterval);
-    
-    let correct = 0;
-    const letters = ['A', 'B', 'C', 'D', 'E'];
-    
-    examQuestions.forEach((q, idx) => {
-        const userAnswer = userAnswers[idx];
-        const correctIdx = q.correctShuffledIdx;
-        if (userAnswer === correctIdx) correct++;
-    });
-    
-    const wrong = examQuestions.length - correct;
-    const percent = Math.round((correct / examQuestions.length) * 100);
-    const passed = correct >= 14;
+    if (timerInterval) clearInterval(timerInterval);
     
     document.getElementById('examActive').style.display = 'none';
     document.getElementById('examResult').style.display = 'block';
     
-    document.getElementById('resultIcon').innerHTML = passed ? '🏆' : '📚';
-    document.getElementById('resultTitle').textContent = passed ? 'İmtahandan Keçdiniz!' : 'İmtahandan Kəsildiniz';
-    document.getElementById('resultTitle').style.color = passed ? 'var(--success)' : 'var(--danger)';
-    document.getElementById('resultTotal').textContent = examQuestions.length;
+    let correct = 0, wrong = 0, skipped = 0;
+    
+    examQuestions.forEach((q, idx) => {
+        if (userAnswers[idx] === -1) {
+            skipped++;
+        } else if (userAnswers[idx] === q.correctShuffledIdx) {
+            correct++;
+        } else {
+            wrong++;
+        }
+    });
+    
+    const total = examQuestions.length;
+    const percent = Math.round((correct / total) * 100);
+    const passed = percent >= 70;
+    
+    document.getElementById('resultIcon').textContent = passed ? '🎉' : '😔';
+    document.getElementById('resultTitle').textContent = passed ? 'Təbriklər! İmtahanı keçdiniz!' : 'İmtahanı keçə bilmədiniz';
     document.getElementById('resultCorrect').textContent = correct;
     document.getElementById('resultWrong').textContent = wrong;
+    document.getElementById('resultSkipped').textContent = skipped;
     document.getElementById('resultPercent').textContent = `${percent}%`;
     
     // Show detailed results
@@ -316,12 +337,18 @@ function finishExam() {
         const userAnswer = userAnswers[idx];
         const correctIdx = q.correctShuffledIdx;
         const isCorrect = userAnswer === correctIdx;
-        const userText = userAnswer >= 0 ? `${letters[userAnswer]}) ${q.shuffledOptions[userAnswer]}` : 'Cavab verilməyib';
-        const correctText = `${letters[correctIdx]}) ${q.shuffledOptions[correctIdx]}`;
+        const userText = userAnswer >= 0 ? `${LETTERS[userAnswer]}) ${q.shuffledOptions[userAnswer]}` : 'Cavab verilməyib';
+        const correctText = `${LETTERS[correctIdx]}) ${q.shuffledOptions[correctIdx]}`;
+        
+        let imgHtml = '';
+        if (q.hasImage && q.images && q.images.length > 0) {
+            imgHtml = `<div style="margin-top:0.5rem"><img src="${q.images[0]}" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid var(--border)" alt="Sual şəkli"></div>`;
+        }
         
         detailsHtml += `
             <div class="result-detail-item ${isCorrect ? 'was-correct' : 'was-wrong'}">
                 <div class="result-detail-question">${idx + 1}. ${q.question}</div>
+                ${imgHtml}
                 <div class="result-detail-answer">
                     ${isCorrect ? '✅' : '❌'} Sizin cavabınız: ${userText}
                     ${!isCorrect ? `<br>✅ Düzgün cavab: <strong>${correctText}</strong>` : ''}
@@ -358,13 +385,13 @@ function selectMaterialCategory(category) {
             <div class="pdf-icon"><i class="fas fa-file-pdf"></i></div>
             <div class="pdf-info">
                 <h4>${topic.name}</h4>
-                <p>${topic.count} sual</p>
+                <p>${topic.questions?.length || 0} sual</p>
             </div>
             <div class="pdf-actions">
-                <a href="pdfs/${category}/${topic.filename}" target="_blank" class="pdf-btn" title="Bax">
+                <a href="pdfs/${category}/${encodeURIComponent(topic.filename)}" target="_blank" class="pdf-btn" title="Bax">
                     <i class="fas fa-eye"></i>
                 </a>
-                <a href="pdfs/${category}/${topic.filename}" download class="pdf-btn" title="Yüklə">
+                <a href="pdfs/${category}/${encodeURIComponent(topic.filename)}" download class="pdf-btn" title="Yüklə">
                     <i class="fas fa-download"></i>
                 </a>
             </div>
@@ -372,47 +399,23 @@ function selectMaterialCategory(category) {
     `).join('');
 }
 
-// Admin
-function updateAdminPanel() {
-    if (!appData) return;
-    
-    let totalQ = 0, totalT = 0;
-    const catStats = {};
-    
-    ['siravi', 'special', 'certdip'].forEach(cat => {
-        const topics = appData[cat] || [];
-        let catQ = 0;
-        topics.forEach(t => { catQ += t.count; totalT++; });
-        totalQ += catQ;
-        catStats[cat] = { topics: topics.length, questions: catQ };
-    });
-    
-    document.getElementById('adminStats').innerHTML = `
-        <div class="stat-row"><span>Ümumi sual</span><span class="stat-value">${totalQ.toLocaleString()}</span></div>
-        <div class="stat-row"><span>Ümumi mövzu</span><span class="stat-value">${totalT}</span></div>
-        <div class="stat-row"><span>Keçid balı</span><span class="stat-value">14/20</span></div>
-        <div class="stat-row"><span>İmtahan müddəti</span><span class="stat-value">Limitsiz</span></div>
-    `;
-    
-    document.getElementById('adminQuestionStats').innerHTML = `
-        <div class="stat-row"><span>Sıravi heyət</span><span class="stat-value">${catStats.siravi.questions} sual (${catStats.siravi.topics} mövzu)</span></div>
-        <div class="stat-row"><span>Xüsusi hazırlıq</span><span class="stat-value">${catStats.special.questions} sual (${catStats.special.topics} mövzu)</span></div>
-        <div class="stat-row"><span>Sertifikat/Diplom</span><span class="stat-value">${catStats.certdip.questions} sual (${catStats.certdip.topics} mövzu)</span></div>
-    `;
-    
-    const catNames = { siravi: 'Sıravi Heyət', special: 'Xüsusi Hazırlıq', certdip: 'Sertifikat/Diplom' };
-    let pdfListHtml = '';
-    ['siravi', 'special', 'certdip'].forEach(cat => {
-        pdfListHtml += `<div style="margin-bottom:1rem">
-            <div class="stat-row"><strong>${catNames[cat]}</strong><span class="stat-value">${appData[cat]?.length || 0} PDF</span></div>`;
-        (appData[cat] || []).forEach(t => {
-            pdfListHtml += `<div class="stat-row" style="padding-left:1rem;font-size:0.85rem">
-                <span>${t.name}</span><span class="stat-value">${t.count}</span></div>`;
-        });
-        pdfListHtml += '</div>';
-    });
-    document.getElementById('adminPdfList').innerHTML = pdfListHtml;
+// Image Modal
+function openImageModal(src) {
+    const modal = document.getElementById('imageModal');
+    document.getElementById('modalImage').src = src;
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
 }
+
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeImageModal();
+});
 
 // Init
 loadData();
