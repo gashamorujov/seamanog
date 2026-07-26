@@ -818,3 +818,14 @@ body {
     .result-icon { font-size: 3rem; }
     .result-card h2 { font-size: 1.25rem; }
 }
+
+/* Timer Warning */
+.timer-warning {
+    color: var(--danger) !important;
+    animation: timerPulse 1s ease-in-out infinite;
+}
+
+@keyframes timerPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}

@@ -8,6 +8,7 @@ let userAnswers = [];
 let timerInterval = null;
 let timerSeconds = 0;
 let examStartTime = null;
+let examTimeLimit = 3600; // 60 minutes in seconds
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E'];
 
@@ -24,8 +25,6 @@ async function loadData() {
 function updateStats() {
     if (!appData) return;
     
-    const catNames = { siravi: 'Sıravi Heyət', special: 'Xüsusi Hazırlıq', certdip: 'Sertifikat/Diplom' };
-    
     ['siravi', 'special', 'certdip'].forEach(cat => {
         const count = appData[cat]?.length || 0;
         const el = document.getElementById(cat + 'Count');
@@ -37,7 +36,6 @@ function updateStats() {
     document.getElementById('certdipPdfCount').textContent = `${appData.certdip?.length || 0} PDF`;
 }
 
-// Navigation
 function navigateTo(page, category) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const pageEl = document.getElementById(`page-${page}`);
@@ -49,7 +47,6 @@ function navigateTo(page, category) {
     
     currentPage = page;
     
-    // Reset exam states
     document.getElementById('examCategorySelect').style.display = 'block';
     document.getElementById('examTopicSelect').style.display = 'none';
     document.getElementById('examActive').style.display = 'none';
@@ -74,7 +71,6 @@ function closeMobileMenu() {
     document.getElementById('nav').classList.remove('open');
 }
 
-// Search
 function handleSearch(query) {
     const dropdown = document.getElementById('searchResults');
     if (!query || query.length < 2 || !appData) {
@@ -84,7 +80,6 @@ function handleSearch(query) {
     
     const q = query.toLowerCase();
     let results = [];
-    
     const catNames = { siravi: 'Sıravi Heyət', special: 'Xüsusi Hazırlıq', certdip: 'Sertifikat/Diplom' };
     
     ['siravi', 'special', 'certdip'].forEach(cat => {
@@ -126,7 +121,6 @@ function handleSearch(query) {
     dropdown.style.display = 'block';
 }
 
-// Close search dropdown on outside click
 document.addEventListener('click', function(e) {
     const dropdown = document.getElementById('searchResults');
     const searchBox = document.getElementById('searchBox');
@@ -135,7 +129,6 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Exam
 function selectExamCategory(category) {
     currentExamCategory = category;
     document.getElementById('examCategorySelect').style.display = 'none';
@@ -144,11 +137,6 @@ function selectExamCategory(category) {
     const catNames = { siravi: 'Sıravi Heyət Hazırlığı', special: 'Xüsusi Hazırlıq', certdip: 'Sertifikat / Diplom' };
     document.getElementById('examCategoryName').textContent = catNames[category];
     document.getElementById('examCategoryTitle').textContent = catNames[category];
-    
-    // Update exam page category counts
-    const count = appData[category]?.length || 0;
-    const countEl = document.getElementById(`exam${category.charAt(0).toUpperCase() + category.slice(1)}Count`);
-    if (countEl) countEl.textContent = `${count} mövzu`;
     
     const grid = document.getElementById('topicGrid');
     const topics = appData[category] || [];
@@ -173,19 +161,15 @@ function startExamWithTopic(category, topicIdx) {
     document.getElementById('examActive').style.display = 'block';
     document.getElementById('examResult').style.display = 'none';
     
-    // Get all questions for this topic
     const questions = currentExamTopic.questions || [];
-    
-    // Shuffle and take up to 20
     const shuffled = [...questions].sort(() => Math.random() - 0.5);
     examQuestions = shuffled.slice(0, Math.min(20, shuffled.length));
     
-    // For each question, create shuffled options with correct answer included
+    // Create shuffled options with correct answer
     examQuestions.forEach(q => {
         const correctAnswer = q.correctAnswer;
         const existingOptions = q.options || [];
         
-        // Collect all available options (correct + fake)
         let allOptions = [correctAnswer];
         existingOptions.forEach(opt => {
             if (opt !== correctAnswer && !allOptions.includes(opt)) {
@@ -193,22 +177,23 @@ function startExamWithTopic(category, topicIdx) {
             }
         });
         
-        // If we don't have enough options (need 5), add more from other questions
         while (allOptions.length < 5) {
             const randomQ = questions[Math.floor(Math.random() * questions.length)];
             if (randomQ.correctAnswer && !allOptions.includes(randomQ.correctAnswer)) {
                 allOptions.push(randomQ.correctAnswer);
             }
-            // Fallback: add generic distractors
-            if (allOptions.length < 5 && !allOptions.includes(`Düzgün cavab yoxdur ${allOptions.length}`)) {
-                allOptions.push(`Düzgün cavab yoxdur ${allOptions.length}`);
+            if (allOptions.length < 5) {
+                const fallbacks = ['Bütün cavablar düzgündür', 'Bütün cavablar yanlışdır', 'Heç biri düzgün deyil'];
+                for (const fb of fallbacks) {
+                    if (!allOptions.includes(fb)) {
+                        allOptions.push(fb);
+                        break;
+                    }
+                }
             }
         }
         
-        // Trim to exactly 5
         allOptions = allOptions.slice(0, 5);
-        
-        // Shuffle options
         const shuffledOptions = [...allOptions].sort(() => Math.random() - 0.5);
         q.shuffledOptions = shuffledOptions;
         q.correctShuffledIdx = shuffledOptions.indexOf(correctAnswer);
@@ -217,8 +202,8 @@ function startExamWithTopic(category, topicIdx) {
     currentQuestionIndex = 0;
     userAnswers = new Array(examQuestions.length).fill(-1);
     
-    // Start timer
     timerSeconds = 0;
+    examTimeLimit = 3600; // 60 minutes
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(updateTimer, 1000);
     examStartTime = Date.now();
@@ -228,9 +213,26 @@ function startExamWithTopic(category, topicIdx) {
 
 function updateTimer() {
     timerSeconds++;
-    const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
-    const secs = (timerSeconds % 60).toString().padStart(2, '0');
-    document.getElementById('timerDisplay').textContent = `${mins}:${secs}`;
+    const remaining = examTimeLimit - timerSeconds;
+    
+    if (remaining <= 0) {
+        clearInterval(timerInterval);
+        finishExam();
+        return;
+    }
+    
+    const mins = Math.floor(remaining / 60).toString().padStart(2, '0');
+    const secs = (remaining % 60).toString().padStart(2, '0');
+    const timerEl = document.getElementById('timerDisplay');
+    timerEl.textContent = `${mins}:${secs}`;
+    
+    // Warning when less than 5 minutes
+    const timerContainer = document.getElementById('examTimer');
+    if (remaining <= 300) {
+        timerContainer.classList.add('timer-warning');
+    } else {
+        timerContainer.classList.remove('timer-warning');
+    }
 }
 
 function showQuestion() {
@@ -242,7 +244,6 @@ function showQuestion() {
     document.getElementById('questionCounter').textContent = `${currentQuestionIndex + 1} / ${total}`;
     document.getElementById('examProgressFill').style.width = `${((currentQuestionIndex + 1) / total) * 100}%`;
     
-    // Show image if available
     const imgContainer = document.getElementById('questionImageContainer');
     if (q.hasImage && q.images && q.images.length > 0) {
         imgContainer.style.display = 'block';
@@ -251,7 +252,6 @@ function showQuestion() {
         imgContainer.style.display = 'none';
     }
     
-    // Show options
     const optionsList = document.getElementById('optionsList');
     optionsList.innerHTML = q.shuffledOptions.map((opt, idx) => `
         <div class="option-item ${userAnswers[currentQuestionIndex] === idx ? 'selected' : ''}" onclick="selectOption(${idx})">
@@ -260,7 +260,6 @@ function showQuestion() {
         </div>
     `).join('');
     
-    // Update nav buttons
     document.getElementById('prevBtn').disabled = currentQuestionIndex === 0;
     
     if (currentQuestionIndex === total - 1) {
@@ -274,13 +273,9 @@ function showQuestion() {
 
 function selectOption(idx) {
     userAnswers[currentQuestionIndex] = idx;
-    
-    // Update visual
     document.querySelectorAll('.option-item').forEach((item, i) => {
         item.classList.toggle('selected', i === idx);
     });
-    
-    // Auto-advance after short delay
     setTimeout(() => {
         if (currentQuestionIndex < examQuestions.length - 1) {
             nextQuestion();
@@ -322,7 +317,7 @@ function finishExam() {
     
     const total = examQuestions.length;
     const percent = Math.round((correct / total) * 100);
-    const passed = percent >= 70;
+    const passed = correct >= 14; // 14/20 pass
     
     document.getElementById('resultIcon').textContent = passed ? '🎉' : '😔';
     document.getElementById('resultTitle').textContent = passed ? 'Təbriklər! İmtahanı keçdiniz!' : 'İmtahanı keçə bilmədiniz';
@@ -331,7 +326,6 @@ function finishExam() {
     document.getElementById('resultSkipped').textContent = skipped;
     document.getElementById('resultPercent').textContent = `${percent}%`;
     
-    // Show detailed results
     let detailsHtml = '<h3 style="margin-bottom:1rem">Ətraflı Nəticə</h3>';
     examQuestions.forEach((q, idx) => {
         const userAnswer = userAnswers[idx];
@@ -367,7 +361,6 @@ function retryExam() {
     }
 }
 
-// Material
 function selectMaterialCategory(category) {
     currentExamCategory = category;
     document.getElementById('materialCategorySelect').style.display = 'none';
@@ -399,7 +392,6 @@ function selectMaterialCategory(category) {
     `).join('');
 }
 
-// Image Modal
 function openImageModal(src) {
     const modal = document.getElementById('imageModal');
     document.getElementById('modalImage').src = src;
@@ -417,5 +409,4 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeImageModal();
 });
 
-// Init
 loadData();
