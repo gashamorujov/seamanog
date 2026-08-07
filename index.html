@@ -14,18 +14,18 @@
         <!-- Header -->
         <header class="header" id="header">
             <div class="container header-inner">
-                <a href="#" class="logo" onclick="navigateTo('home')">
+                <a href="#" class="logo" onclick="navigateTo('home'); return false;">
                     <span>Seaman<span class="logo-accent">OG</span></span>
                 </a>
                 <div class="header-right">
                     <nav class="nav" id="nav">
-                        <a href="#" class="nav-link active" data-page="home" onclick="navigateTo('home')">
+                        <a href="#" class="nav-link active" data-page="home" onclick="navigateTo('home'); return false;">
                             <i class="fas fa-home"></i> Ana Səhifə
                         </a>
-                        <a href="#" class="nav-link" data-page="exam" onclick="navigateTo('exam')">
+                        <a href="#" class="nav-link" data-page="exam" onclick="navigateTo('exam'); return false;">
                             <i class="fas fa-pen-fancy"></i> İmtahan
                         </a>
-                        <a href="#" class="nav-link" data-page="material" onclick="navigateTo('material')">
+                        <a href="#" class="nav-link" data-page="material" onclick="navigateTo('material'); return false;">
                             <i class="fas fa-book"></i> Material
                         </a>
                     </nav>
@@ -88,21 +88,21 @@
                             <p>Kateqoriyanı seçin</p>
                         </div>
                         <div class="category-cards">
-                            <div class="category-card" onclick="selectExamCategory('siravi')">
+                            <div class="category-card" onclick="navigateTo('exam', 'siravi')">
                                 <div class="card-icon" style="background: linear-gradient(135deg, #667eea, #764ba2)">
                                     <i class="fas fa-users"></i>
                                 </div>
                                 <h3>Sıravi Heyət Hazırlığı</h3>
                                 <p id="examSiraviCount">5 mövzu</p>
                             </div>
-                            <div class="category-card" onclick="selectExamCategory('special')">
+                            <div class="category-card" onclick="navigateTo('exam', 'special')">
                                 <div class="card-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c)">
                                     <i class="fas fa-certificate"></i>
                                 </div>
                                 <h3>Xüsusi Hazırlıq</h3>
                                 <p id="examSpecialCount">38 mövzu</p>
                             </div>
-                            <div class="category-card" onclick="selectExamCategory('certdip')">
+                            <div class="category-card" onclick="navigateTo('exam', 'certdip')">
                                 <div class="card-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe)">
                                     <i class="fas fa-graduation-cap"></i>
                                 </div>
@@ -115,7 +115,7 @@
                     <!-- Topic Select -->
                     <div id="examTopicSelect" style="display:none">
                         <div class="breadcrumb">
-                            <a href="#" onclick="navigateTo('exam')">İmtahan</a>
+                            <a href="#" onclick="navigateTo('exam'); return false;">İmtahan</a>
                             <i class="fas fa-chevron-right"></i>
                             <span id="examCategoryName"></span>
                         </div>
@@ -150,11 +150,15 @@
                                 <img id="questionImage" class="question-image" alt="Sual şəkli" onclick="openImageModal(this.src)">
                             </div>
                             <div class="options-list" id="optionsList"></div>
+                            <div class="answer-feedback" id="answerFeedback" style="display:none"></div>
                         </div>
 
                         <div class="exam-nav">
                             <button class="btn btn-outline" id="prevBtn" onclick="prevQuestion()" disabled>
                                 <i class="fas fa-arrow-left"></i> Əvvəlki
+                            </button>
+                            <button class="btn btn-warning" id="confirmBtn" onclick="confirmAnswer()" style="display:none" disabled>
+                                <i class="fas fa-check-circle"></i> Təsdiqlə
                             </button>
                             <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()">
                                 Növbəti <i class="fas fa-arrow-right"></i>
@@ -211,21 +215,21 @@
                             <p>PDF materiallara baxın və yükləyin</p>
                         </div>
                         <div class="category-cards">
-                            <div class="category-card" onclick="selectMaterialCategory('siravi')">
+                            <div class="category-card" onclick="navigateTo('material', 'siravi')">
                                 <div class="card-icon" style="background: linear-gradient(135deg, #667eea, #764ba2)">
                                     <i class="fas fa-users"></i>
                                 </div>
                                 <h3>Sıravi Heyət Hazırlığı</h3>
                                 <p id="siraviPdfCount">5 PDF</p>
                             </div>
-                            <div class="category-card" onclick="selectMaterialCategory('special')">
+                            <div class="category-card" onclick="navigateTo('material', 'special')">
                                 <div class="card-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c)">
                                     <i class="fas fa-certificate"></i>
                                 </div>
                                 <h3>Xüsusi Hazırlıq</h3>
                                 <p id="specialPdfCount">38 PDF</p>
                             </div>
-                            <div class="category-card" onclick="selectMaterialCategory('certdip')">
+                            <div class="category-card" onclick="navigateTo('material', 'certdip')">
                                 <div class="card-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe)">
                                     <i class="fas fa-graduation-cap"></i>
                                 </div>
@@ -236,7 +240,7 @@
                     </div>
                     <div id="materialTopicList" style="display:none">
                         <div class="breadcrumb">
-                            <a href="#" onclick="navigateTo('material')">Material</a>
+                            <a href="#" onclick="navigateTo('material'); return false;">Material</a>
                             <i class="fas fa-chevron-right"></i>
                             <span id="materialCategoryName"></span>
                         </div>
@@ -249,6 +253,35 @@
                 </div>
             </div>
         </main>
+
+        <!-- Exam Mode Modal -->
+        <div class="mode-modal" id="modeModal" style="display:none">
+            <div class="mode-modal-overlay" onclick="closeModeModal()"></div>
+            <div class="mode-modal-card">
+                <button class="mode-modal-close" onclick="closeModeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+                <h3>İmtahan Rejimini Seçin</h3>
+                <p class="mode-modal-topic" id="modeModalTopicName"></p>
+                <div class="mode-options">
+                    <button class="mode-option" onclick="startExam('20')">
+                        <div class="mode-option-icon"><i class="fas fa-list-ol"></i></div>
+                        <div>
+                            <h4>20 Sual</h4>
+                            <p>Bütün suallardan təsadüfi seçilmiş 20 sual</p>
+                        </div>
+                    </button>
+                    <button class="mode-option mode-option-full" onclick="startExam('full')">
+                        <div class="mode-option-icon"><i class="fas fa-align-justify"></i></div>
+                        <div>
+                            <h4>Full</h4>
+                            <p id="modeFullCount">Bütün suallar</p>
+                        </div>
+                    </button>
+                </div>
+                <button class="btn btn-outline mode-close-btn" onclick="closeModeModal()">Bağla</button>
+            </div>
+        </div>
 
         <!-- Image Modal -->
         <div class="image-modal" id="imageModal" style="display:none" onclick="closeImageModal()">

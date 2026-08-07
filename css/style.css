@@ -844,3 +844,211 @@ body {
     flex: 1;
     width: 100%;
 }
+
+/* Exam Mode Modal */
+.mode-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.mode-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15,23,42,0.6);
+    backdrop-filter: blur(4px);
+}
+
+.mode-modal-card {
+    position: relative;
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: var(--shadow-xl);
+    text-align: center;
+}
+
+.mode-modal-card h3 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.mode-modal-topic {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+.mode-modal-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg);
+    color: var(--text-secondary);
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.mode-modal-close:hover {
+    background: var(--border);
+    color: var(--text);
+}
+
+.mode-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.mode-option {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    padding: 1.25rem;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card-bg);
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: var(--transition);
+}
+
+.mode-option:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.mode-option-full:hover {
+    border-color: var(--success);
+}
+
+.mode-option-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(37,99,235,0.1);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.mode-option-full .mode-option-icon {
+    background: rgba(16,185,129,0.1);
+    color: var(--success);
+}
+
+.mode-option h4 {
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.mode-option p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 0.15rem;
+}
+
+.mode-close-btn {
+    width: 100%;
+    justify-content: center;
+}
+
+/* Answer feedback */
+.answer-feedback {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 0.9rem 1.1rem;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.answer-feedback.correct {
+    background: rgba(16,185,129,0.08);
+    color: #047857;
+    border: 1px solid rgba(16,185,129,0.3);
+}
+
+.answer-feedback.wrong {
+    background: rgba(239,68,68,0.08);
+    color: #b91c1c;
+    border: 1px solid rgba(239,68,68,0.3);
+}
+
+.answer-feedback strong {
+    color: var(--success);
+}
+
+.option-item.disabled {
+    cursor: default;
+}
+
+.option-item.disabled:hover {
+    border-color: var(--border);
+    background: var(--card-bg);
+}
+
+.option-item.selected.disabled:hover {
+    border-color: var(--primary);
+    background: rgba(37,99,235,0.05);
+}
+
+.option-item.correct.disabled:hover {
+    border-color: var(--success);
+    background: rgba(16,185,129,0.05);
+}
+
+.option-item.wrong.disabled:hover {
+    border-color: var(--danger);
+    background: rgba(239,68,68,0.05);
+}
+
+/* Confirm button */
+.btn-warning {
+    background: var(--warning);
+    color: white;
+}
+
+.btn-warning:hover {
+    background: #d97706;
+}
+
+@media (max-width: 480px) {
+    .mode-modal-card {
+        padding: 1.5rem;
+    }
+    .mode-option {
+        padding: 1rem;
+        gap: 0.75rem;
+    }
+}
