@@ -98,6 +98,102 @@ function shuffle(arr) {
     return a;
 }
 
+function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function romanValue(s) {
+    const map = { I: 1, V: 5, X: 10 };
+    let total = 0, prev = 0;
+    for (let i = s.length - 1; i >= 0; i--) {
+        const v = map[s[i]];
+        if (!v) return -1;
+        total += v < prev ? -v : v;
+        prev = v;
+    }
+    return total;
+}
+
+function findListMarkers(text) {
+    const markers = [];
+    let m;
+
+    const numRe = /(^|[\s;])(\d{1,3}[.)])(?=\s)/g;
+    while ((m = numRe.exec(text)) !== null) {
+        markers.push({ index: m.index + m[1].length, marker: m[2], type: 'num', value: parseInt(m[2], 10) });
+    }
+
+    const romanRe = /(^|[\s;])((?:I{1,3}|IV|V|VI{0,3}|IX|X)[.)])(?=\s)/g;
+    while ((m = romanRe.exec(text)) !== null) {
+        const val = romanValue(m[2].slice(0, -1));
+        if (val > 0) markers.push({ index: m.index + m[1].length, marker: m[2], type: 'roman', value: val });
+    }
+
+    const letterRe = /(^|[\s;])(\([a-zA-ZəıöüğşçƏİÖÜĞŞÇ]\)|[a-zA-ZəıöüğşçƏİÖÜĞŞÇ][.)])(?=\s)/g;
+    while ((m = letterRe.exec(text)) !== null) {
+        const marker = m[2];
+        const letter = marker[0] === '(' ? marker[1] : marker[0];
+        markers.push({ index: m.index + m[1].length, marker: marker, type: 'letter', value: letter.toLowerCase().charCodeAt(0) });
+    }
+
+    markers.sort((a, b) => a.index - b.index);
+    const filtered = [];
+    let lastEnd = -1;
+    markers.forEach(mk => {
+        if (mk.index >= lastEnd) {
+            filtered.push(mk);
+            lastEnd = mk.index + mk.marker.length;
+        }
+    });
+    return filtered;
+}
+
+function bestMarkerRun(markers, type) {
+    const arr = markers.filter(mk => mk.type === type);
+    if (arr.length < 2) return [];
+    const sorted = [...arr].sort((a, b) => a.value - b.value);
+    let best = [sorted[0]], run = [sorted[0]];
+    for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i].value === run[run.length - 1].value + 1) {
+            run.push(sorted[i]);
+        } else {
+            if (run.length > best.length) best = run;
+            run = [sorted[i]];
+        }
+    }
+    if (run.length > best.length) best = run;
+    if (best.length < 2) return [];
+    const ids = new Set(best);
+    return arr.filter(mk => ids.has(mk));
+}
+
+function textToHtml(s) {
+    return escapeHtml(s).replace(/\n/g, '<br>');
+}
+
+function formatQuestionText(text) {
+    const src = String(text || '').replace(/\r\n?/g, '\n').replace(/[ \t]+/g, ' ').trim();
+    if (!src) return '';
+
+    const markers = findListMarkers(src);
+    let list = bestMarkerRun(markers, 'num');
+    if (list.length < 2) list = bestMarkerRun(markers, 'letter');
+    if (list.length < 2) list = bestMarkerRun(markers, 'roman');
+    if (list.length < 2) return textToHtml(src);
+
+    const lead = src.slice(0, list[0].index).trim();
+    let html = '';
+    if (lead) html += `<div class="q-lead">${textToHtml(lead)}</div>`;
+    html += '<div class="q-items">';
+    list.forEach((mk, i) => {
+        const end = i + 1 < list.length ? list[i + 1].index : src.length;
+        const itemText = src.slice(mk.index + mk.marker.length, end).trim();
+        html += `<div class="q-item"><span class="q-marker">${escapeHtml(mk.marker)}</span>${textToHtml(itemText)}</div>`;
+    });
+    html += '</div>';
+    return html;
+}
+
 function clearExamSession() {
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = null;
@@ -189,17 +285,17 @@ function handleSearch(query) {
         return;
     }
     
-    const q = query.toLowerCase();
+    const q = normSearch(query);
     let results = [];
     const catNames = { siravi: 'Sıravi Heyət', special: 'Xüsusi Hazırlıq', certdip: 'Sertifikat/Diplom' };
     
     ['siravi', 'special', 'certdip'].forEach(cat => {
         (appData[cat] || []).forEach(topic => {
-            if (topic.name.toLowerCase().includes(q)) {
+            if (normSearch(topic.name).includes(q)) {
                 results.push({ type: 'topic', category: cat, topic: topic });
             }
             (topic.questions || []).forEach(question => {
-                if (question.question && question.question.toLowerCase().includes(q)) {
+                if (question.question && normSearch(question.question).includes(q)) {
                     results.push({ type: 'question', category: cat, topic: topic, question: question });
                 }
             });
@@ -214,12 +310,17 @@ function handleSearch(query) {
     let html = '';
     results.slice(0, 15).forEach(r => {
         if (r.type === 'topic') {
-            html += `<div class="search-result-item" onclick="navigateTo('exam', '${r.category}')">
-                <div class="sr-title"><i class="fas fa-folder"></i> ${r.topic.name}</div>
+            const topicIdx = appData[r.category].indexOf(r.topic);
+            html += `<div class="search-result-item">
+                <div class="sr-title"><i class="fas fa-folder"></i> ${escapeHtml(r.topic.name)}</div>
                 <div class="sr-meta">${catNames[r.category]} • ${r.topic.questions?.length || 0} sual</div>
+                <div class="sr-actions">
+                    <button class="sr-btn sr-btn-primary" onclick="startExamWithTopic('${r.category}', ${topicIdx})"><i class="fas fa-pen-fancy"></i> İmtahan</button>
+                    <button class="sr-btn" onclick="openMaterialPdf('${r.category}', ${topicIdx})"><i class="fas fa-file-pdf"></i> Material</button>
+                </div>
             </div>`;
         } else {
-            const preview = r.question.question.substring(0, 80) + '...';
+            const preview = escapeHtml(r.question.question.substring(0, 80)) + '...';
             const topicIdx = appData[r.category].indexOf(r.topic);
             html += `<div class="search-result-item" onclick="startExamWithTopic('${r.category}', ${topicIdx})">
                 <div class="sr-title"><i class="fas fa-question-circle"></i> ${preview}</div>
@@ -230,6 +331,88 @@ function handleSearch(query) {
     
     dropdown.innerHTML = html;
     dropdown.style.display = 'block';
+}
+
+function normSearch(s) {
+    let str;
+    try {
+        str = String(s || '').toLocaleLowerCase('az');
+    } catch (e) {
+        str = String(s || '').toLowerCase();
+    }
+    // Fold dotless ı into i so "ISPS-3" and "isps" match
+    return str.replace(/ı/g, 'i');
+}
+
+function searchTopics(query) {
+    const q = normSearch(query).trim();
+    if (!q || !appData) return [];
+    const results = [];
+    ['siravi', 'special', 'certdip'].forEach(cat => {
+        (appData[cat] || []).forEach((topic, idx) => {
+            if (normSearch(topic.name).includes(q)) {
+                results.push({ category: cat, topicIdx: idx, topic: topic });
+            }
+        });
+    });
+    return results;
+}
+
+function handleHomeSearch(query) {
+    const container = document.getElementById('homeSearchResults');
+    const box = document.getElementById('homeSearchBox');
+    const hasText = query && query.trim().length > 0;
+    if (box) box.classList.toggle('has-text', !!hasText);
+
+    if (!hasText || query.trim().length < 2 || !appData) {
+        container.innerHTML = '';
+        return;
+    }
+
+    const results = searchTopics(query);
+    if (results.length === 0) {
+        container.innerHTML = `
+            <div class="search-no-results">
+                <i class="fas fa-search-minus"></i>
+                <p>Heç bir kurs tapılmadı</p>
+                <span>Başqa açar sözlərlə cəhd edin</span>
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = results.map(r => `
+        <div class="search-course-card">
+            <div class="search-course-icon"><i class="fas fa-book-open"></i></div>
+            <div class="search-course-info">
+                <h4>${escapeHtml(r.topic.name)}</h4>
+                <p>${CAT_NAMES[r.category]} • ${r.topic.questions?.length || 0} sual</p>
+            </div>
+            <div class="search-course-actions">
+                <button class="btn btn-primary btn-sm" onclick="startExamWithTopic('${r.category}', ${r.topicIdx})">
+                    <i class="fas fa-pen-fancy"></i> İmtahan
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="openMaterialPdf('${r.category}', ${r.topicIdx})">
+                    <i class="fas fa-file-pdf"></i> Material
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function clearHomeSearch() {
+    const input = document.getElementById('homeSearchInput');
+    if (input) input.value = '';
+    const container = document.getElementById('homeSearchResults');
+    if (container) container.innerHTML = '';
+    const box = document.getElementById('homeSearchBox');
+    if (box) box.classList.remove('has-text');
+}
+
+function openMaterialPdf(category, topicIdx) {
+    const topic = appData && appData[category] ? appData[category][topicIdx] : null;
+    if (!topic || !topic.filename) return;
+    const url = `pdfs/${category}/${encodeURIComponent(topic.filename)}`;
+    window.open(url, '_blank');
 }
 
 document.addEventListener('click', function(e) {
@@ -373,7 +556,7 @@ function showQuestion() {
     const confirmed = isFull && confirmedAnswers[currentQuestionIndex];
 
     document.getElementById('questionNumber').textContent = `Sual ${currentQuestionIndex + 1}`;
-    document.getElementById('questionText').textContent = q.question;
+    document.getElementById('questionText').innerHTML = formatQuestionText(q.question);
     document.getElementById('questionCounter').textContent = `${currentQuestionIndex + 1} / ${total}`;
     document.getElementById('examProgressFill').style.width = `${((currentQuestionIndex + 1) / total) * 100}%`;
 
@@ -522,7 +705,7 @@ function finishExam() {
         
         detailsHtml += `
             <div class="result-detail-item ${isCorrect ? 'was-correct' : 'was-wrong'}">
-                <div class="result-detail-question">${idx + 1}. ${q.question}</div>
+                <div class="result-detail-question">${idx + 1}. ${formatQuestionText(q.question)}</div>
                 ${imgHtml}
                 <div class="result-detail-answer">
                     ${isCorrect ? '✅' : '❌'} Sizin cavabınız: ${userText}

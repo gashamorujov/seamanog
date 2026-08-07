@@ -48,7 +48,23 @@
             <!-- Home Page -->
             <div class="page active" id="page-home">
                 <div class="container">
-                    <div class="section-title" style="margin-top:2rem">
+                    <!-- Search Section -->
+                    <div class="home-search">
+                        <div class="home-search-header">
+                            <h2><i class="fas fa-search"></i> Axtarış</h2>
+                            <p>Kursun adını yazaraq istədiyiniz kursu sürətlə tapın</p>
+                        </div>
+                        <div class="home-search-box" id="homeSearchBox">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="homeSearchInput" placeholder="Kurs axtarın (məs: ISPS-3, MARPOL, Naviqasiya...)" oninput="handleHomeSearch(this.value)" autocomplete="off">
+                            <button class="home-search-clear" onclick="clearHomeSearch()" title="Təmizlə">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="home-search-results" id="homeSearchResults"></div>
+                    </div>
+
+                    <div class="section-title" style="margin-top:2.5rem">
                         <h2>İmtahan Bölmələri</h2>
                         <p>Kateqoriyanı seçin və imtahana başlayın</p>
                     </div>
