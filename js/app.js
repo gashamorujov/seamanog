@@ -512,9 +512,14 @@ function startExam(mode) {
     confirmedAnswers = new Array(examQuestions.length).fill(false);
 
     timerSeconds = 0;
-    examTimeLimit = 3600; // 60 minutes
+    examTimeLimit = examMode === 'full' ? null : 3600; // no time limit in full exam
     if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(updateTimer, 1000);
+    timerInterval = null;
+    const timerEl = document.getElementById('examTimer');
+    if (timerEl) timerEl.style.display = examMode === 'full' ? 'none' : 'flex';
+    if (examMode !== 'full') {
+        timerInterval = setInterval(updateTimer, 1000);
+    }
     examStartTime = Date.now();
 
     const target = `#exam/${currentExamCategory}/quiz/${pendingTopicIdx}/${examMode}`;
@@ -526,6 +531,7 @@ function startExam(mode) {
 }
 
 function updateTimer() {
+    if (examTimeLimit === null) return;
     timerSeconds++;
     const remaining = examTimeLimit - timerSeconds;
     
