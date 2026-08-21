@@ -331,27 +331,6 @@ body {
     transition: width 0.3s ease;
 }
 
-/* ===== PC fullscreen exam mode ===== */
-@media (min-width: 1025px) {
-    #page-exam .container {
-        max-width: none;
-        padding-left: 2.5rem;
-        padding-right: 2.5rem;
-    }
-
-    .question-card {
-        padding: 2.5rem 3rem;
-    }
-
-    .question-text {
-        font-size: 1.35rem;
-    }
-
-    .option-text {
-        font-size: 1.15rem;
-    }
-}
-
 /* Question Card */
 .question-card {
     background: var(--card-bg);
